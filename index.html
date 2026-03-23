@@ -1,181 +1,132 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>رِقّة - تطبيق المرأة</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق رقة - رفيقكِ لكل لحظة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-pink: #f8bbd0;
+            --dark-pink: #e91e63;
+            --soft-purple: #9575cd;
+            --text-color: #4a4a4a;
+            --bg-gradient: linear-gradient(135deg, #fff5f8 0%, #f3e5f5 100%);
+        }
 
-<style>
-  body { margin:0; font-family: Arial,sans-serif; background:#fff7fa; color:#333; }
-  header { background:#ffb7d9; padding:12px; text-align:center; font-size:22px; font-weight:bold; color:white; position:sticky; top:0; z-index:1000; }
-  .search-bar { margin-top:8px; display:flex; justify-content:center; }
-  .search-bar input { width:80%; padding:8px; border-radius:8px; border:none; outline:none; }
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 0;
+            background: var(--bg-gradient);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
 
-  .side-menu { position:fixed; left:0; top:60px; width:220px; height:calc(100% - 60px); background:#ffe1ee; padding:12px; box-shadow:2px 0 5px rgba(0,0,0,0.1); }
-  .side-menu h4 { margin-top:0; }
-  .side-menu a { display:block; margin:6px 0; text-decoration:none; color:#d74e8a; font-weight:bold; }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            text-align: center;
+        }
 
-  .main { margin-left:240px; padding:12px; }
+        .logo {
+            font-size: 3rem;
+            color: var(--dark-pink);
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
 
-  .bottom-nav { position:fixed; bottom:0; width:100%; background:#ffe1ee; display:flex; justify-content:space-around; padding:10px 0; border-top:2px solid #ffc7dd; }
-  .bottom-nav button { background:none; border:none; font-size:16px; color:#d74e8a; font-weight:bold; cursor:pointer; }
+        h1 {
+            font-size: 1.8rem;
+            color: var(--dark-pink);
+            margin-bottom: 20px;
+        }
 
-  .section { display:none; }
-  .active { display:block; }
+        .hero-text {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            color: #666;
+        }
 
-  .post { background:#fff; padding:12px; border-radius:8px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
-  .post button { margin-right:6px; cursor:pointer; }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 40px 0;
+        }
 
-  .admin-panel { display:none; background:#ffe1ee; padding:12px; border-radius:8px; margin-bottom:12px; }
-  .admin-panel input, .admin-panel button { padding:6px; margin:4px 0; }
+        .feature-item {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 15px;
+            border-radius: 15px;
+            border: 1px solid var(--primary-pink);
+            font-weight: 500;
+        }
 
-  .mini-bouh { background:#ffddee; padding:8px; margin:6px 0; border-radius:6px; font-size:14px; }
+        .btn-download {
+            display: inline-block;
+            background: var(--dark-pink);
+            color: white;
+            padding: 18px 45px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 1.3rem;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
+            transition: transform 0.3s ease;
+        }
 
-  @media(max-width:768px) { .side-menu{display:none;} .main{margin-left:0;} }
-</style>
+        .btn-download:hover {
+            transform: scale(1.05);
+        }
 
-<script>
-  // عرض الأقسام
-  function showSection(id) {
-    document.querySelectorAll('.section').forEach(sec=>sec.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-  }
+        .zen-section {
+            margin-top: 50px;
+            padding: 20px;
+            background: rgba(149, 117, 205, 0.1);
+            border-radius: 20px;
+            font-style: italic;
+        }
 
-  // التفاعل مع البوستات
-  function likePost(el){ const span=el.querySelector('span'); span.textContent=Number(span.textContent)+1; }
-  function commentPost(){ const text=prompt("اكتب تعليقك:"); if(text) alert("تم إضافة تعليق: "+text); }
-  function sharePost(title, content){ if(navigator.share){ navigator.share({title,text:content}); } else { alert("نسخ الرابط وشاركه يدوياً"); } }
-
-  // بيانات admin
-  const ADMIN_USER = "zazo";
-  const ADMIN_PASS = "zazo010988";
-
-  function loginAdmin() {
-    const user = prompt("اسم المستخدم:");
-    const pass = prompt("كلمة المرور:");
-    if(user===ADMIN_USER && pass===ADMIN_PASS){
-      document.getElementById("admin-panel").style.display="block";
-      alert("تم الدخول للوحة الادمن");
-    } else { alert("خطأ في بيانات الدخول"); }
-  }
-
-  // جلب محتوى ذكاء صناعي تجريبي
-  function fetchAIContent(sectionId) {
-    const content = "هذا نص تجريبي من الذكاء الصناعي لقسم "+sectionId;
-    const mini = document.createElement("div");
-    mini.className = "mini-bouh";
-    mini.textContent = content;
-    document.getElementById(sectionId).prepend(mini);
-  }
-
-  function uploadContent() {
-    alert("رفع محتوى تجريبي (نص، صور، فيديو، بوست، شعر، مقالات)");
-  }
-
-  // متابعة الصحة تجريبية
-  function healthTrack(type){
-    alert("تنبيه تجريبي: متابعة "+type);
-  }
-</script>
+        footer {
+            margin-top: 50px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+    </style>
 </head>
-
 <body>
 
-<header>
-  رِقّة
-  <div class="search-bar">
-    <input type="text" placeholder="ابحث هنا...">
-  </div>
-</header>
+    <div class="container">
+        <div class="logo">رقة</div>
+        
+        <h1>عالمكِ الخاص.. حيث تلتقي الرعاية بالسكينة</h1>
+        
+        <p class="hero-text">
+            من دورتكِ الشهرية إلى أمومتك، من رشاقتكِ إلى أسرار طبخك، وحتى هدوء روحك في عالمنا الافتراضي.. 
+            <b>تطبيق رقة هو كل ما تحتاجينه لتكوني النسخة الأجمل من نفسك.</b>
+        </p>
 
-<div class="side-menu">
-  <h4>القائمة</h4>
-  <a href="privacy.html">شروط الخصوصية</a>
-  <a href="#" onclick="loginAdmin()">لوحة الادمن</a>
-</div>
+        <a href="YOUR_APK_LINK_HERE" class="btn-download">حملي التطبيق الآن مجاناً</a>
 
-<div class="main">
+        <div class="features-grid">
+            <div class="feature-item">🌸 تتبع الدورة والحمل</div>
+            <div class="feature-item">👶 الأمومة والرضاعة</div>
+            <div class="feature-item">🥗 الرشاقة والطبخ</div>
+            <div class="feature-item">💄 أزياء وديكور</div>
+            <div class="feature-item">⚖️ الفقه والعلاقات</div>
+            <div class="feature-item">🎥 مكتبة فيديوهات</div>
+        </div>
 
-  <div id="feelings" class="section active">
-    <h2>قسم المشاعر</h2>
-    <button onclick="fetchAIContent('feelings')">بوح الأسبوع</button>
-    <div class="post">
-      <h3>مقال تجريبي</h3>
-      <p>هذا محتوى تجريبي لقسم المشاعر.</p>
-      <button onclick="likePost(this)">إعجاب (<span>0</span>)</button>
-      <button onclick="commentPost()">تعليق</button>
-      <button onclick="sharePost('مشاعر','هذا محتوى تجريبي لقسم المشاعر')">مشاركة</button>
+        <div class="zen-section">
+            <h3>✨ العالم الافتراضي</h3>
+            <p>اهربي من ضجيج العالم إلى مساحتكِ الخاصة من الهدوء والسكينة داخل تطبيقنا.</p>
+        </div>
+
+        <footer>
+            جميع الحقوق محفوظة - تطبيق رقة 2026
+        </footer>
     </div>
-  </div>
-
-  <div id="fiqh" class="section">
-    <h2>فقه المرأة</h2>
-    <button onclick="fetchAIContent('fiqh')">بوح الأسبوع</button>
-    <div class="post">
-      <h3>مقال تجريبي</h3>
-      <p>محتوى تجريبي لفقه المرأة.</p>
-      <button onclick="likePost(this)">إعجاب (<span>0</span>)</button>
-      <button onclick="commentPost()">تعليق</button>
-      <button onclick="sharePost('فقه المرأة','محتوى تجريبي')">مشاركة</button>
-    </div>
-  </div>
-
-  <div id="relations" class="section">
-    <h2>العلاقات الحميمية</h2>
-    <button onclick="fetchAIContent('relations')">بوح الأسبوع</button>
-    <div class="post">
-      <h3>مقال تجريبي</h3>
-      <p>محتوى تجريبي للعلاقات الحميمية.</p>
-      <button onclick="likePost(this)">إعجاب (<span>0</span>)</button>
-      <button onclick="commentPost()">تعليق</button>
-      <button onclick="sharePost('العلاقات الحميمية','محتوى تجريبي')">مشاركة</button>
-    </div>
-  </div>
-
-  <div id="health" class="section">
-    <h2>الصحة</h2>
-    <button onclick="fetchAIContent('health')">بوح الأسبوع</button>
-    <div class="post">
-      <h3>متابعة الحيض</h3>
-      <button onclick="healthTrack('الحيض')">تنبيه متابعة الحيض</button>
-    </div>
-    <div class="post">
-      <h3>متابعة الحمل</h3>
-      <button onclick="healthTrack('الحمل')">تنبيه متابعة الحمل</button>
-    </div>
-    <div class="post">
-      <h3>متابعة الرضاعة</h3>
-      <button onclick="healthTrack('الرضاعة')">تنبيه متابعة الرضاعة</button>
-    </div>
-  </div>
-
-  <div id="community" class="section">
-    <h2>المجتمع</h2>
-    <button onclick="fetchAIContent('community')">بوح الأسبوع</button>
-    <div class="post">
-      <h3>قصص نجاح</h3>
-      <p>قصص وتجارب ملهمة لحل مشاكل المجتمع.</p>
-      <button onclick="likePost(this)">إعجاب (<span>0</span>)</button>
-      <button onclick="commentPost()">تعليق</button>
-      <button onclick="sharePost('المجتمع','قصص وتجارب ملهمة')">مشاركة</button>
-    </div>
-  </div>
-
-  <div id="admin-panel" class="admin-panel">
-    <h3>لوحة الادمن</h3>
-    <button onclick="fetchAIContent('feelings')">حلب محتوى ذكاء</button>
-    <button onclick="uploadContent()">رفع محتوى</button>
-  </div>
-
-</div>
-
-<div class="bottom-nav">
-  <button onclick="showSection('feelings')">المشاعر</button>
-  <button onclick="showSection('fiqh')">فقه المرأة</button>
-  <button onclick="showSection('relations')">العلاقات الحميمية</button>
-  <button onclick="showSection('health')">الصحة</button>
-  <button onclick="showSection('community')">المجتمع</button>
-</div>
 
 </body>
 </html>
