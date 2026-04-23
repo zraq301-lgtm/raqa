@@ -87,6 +87,33 @@
             transform: scale(1.05);
         }
 
+        /* تنسيق عداد التحميلات الجديد */
+        .download-stats {
+            margin-top: 15px;
+            font-size: 0.95rem;
+            color: var(--dark-pink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #4CAF50;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
         .zen-section {
             margin-top: 50px;
             padding: 20px;
@@ -115,6 +142,11 @@
         </p>
 
         <a href="https://github.com/zraq301-lgtm/raqqa/releases/latest/download/Roqa-Final-Signed.apk" class="btn-download">حملي التطبيق الآن مجاناً</a>
+
+        <div class="download-stats">
+            <span class="pulse-dot"></span>
+            <span>أكثر من <b>5,430</b> سيدة قمن بالتحميل هذا الشهر</span>
+        </div>
 
         <div class="features-grid">
             <div class="feature-item">🌸 تتبع الدورة والحمل</div>
