@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2GRPPNRBN6"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-2GRPPNRBN6');
+    </script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تطبيق رقة - رفيقكِ لكل لحظة</title>
@@ -87,7 +96,6 @@
             transform: scale(1.05);
         }
 
-        /* تنسيق عداد التحميلات الجديد */
         .download-stats {
             margin-top: 15px;
             font-size: 0.95rem;
@@ -141,7 +149,7 @@
             <b>تطبيق رقة هو كل ما تحتاجينه لتكوني النسخة الأجمل من نفسك.</b>
         </p>
 
-        <a href="https://github.com/zraq301-lgtm/raqqa/releases/latest/download/Roqa-Final-Signed.apk" class="btn-download">حملي التطبيق الآن مجاناً</a>
+        <a href="https://github.com/zraq301-lgtm/raqqa/releases/latest/download/Roqa-Final-Signed.apk" id="download-btn" class="btn-download">حملي التطبيق الآن مجاناً</a>
 
         <div class="download-stats">
             <span class="pulse-dot"></span>
@@ -167,5 +175,14 @@
         </footer>
     </div>
 
+    <script>
+      document.getElementById('download-btn').addEventListener('click', function() {
+        gtag('event', 'file_download', {
+          'file_name': 'Roqa-Final-Signed.apk',
+          'file_extension': 'apk',
+          'link_url': this.href
+        });
+      });
+    </script>
 </body>
 </html>
