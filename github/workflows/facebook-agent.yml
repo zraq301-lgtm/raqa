@@ -19,14 +19,14 @@ jobs:
           node-version: '20'
 
       - name: Install Axios
-# سنقوم بتثبيت axios محلياً لتجنب أي مشاكل في بيئة التشغيل
+        # سنقوم بتثبيت axios محلياً لتجنب أي مشاكل في بيئة التشغيل
         run: npm install axios
 
       - name: Fetch and Process Comments
         env:
           FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
           POST_ID: ${{ secrets.POST_ID }}
-          VERCEL_AGENT_URL: "https://raqa-1zhm.vercel.app/api/agent"
+          VERCEL_AGENT_URL: "https://raqa-1zhm.vercel.app/api/agent-route"
           AGENT_SECRET: ${{ secrets.AGENT_SECRET }}
         run: |
           node -e "
