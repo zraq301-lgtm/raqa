@@ -1,0 +1,61 @@
+name: Facebook Comments Checker
+
+on:
+  schedule:
+    # يعمل تلقائياً كل 10 دقائق
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # يتيح لك تشغيله يدوياً للتجربة في أي وقت
+
+jobs:
+  check-comments:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Axios
+# سنقوم بتثبيت axios محلياً لتجنب أي مشاكل في بيئة التشغيل
+        run: npm install axios
+
+      - name: Fetch and Process Comments
+        env:
+          FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
+          POST_ID: ${{ secrets.POST_ID }}
+          VERCEL_AGENT_URL: "https://raqa-1zhm.vercel.app/api/agent"
+          AGENT_SECRET: ${{ secrets.AGENT_SECRET }}
+        run: |
+          node -e "
+          const axios = require('axios');
+          async function run() {
+            try {
+              console.log('جاري سحب التعليقات من فيسبوك...');
+              
+              // 1. جلب التعليقات من منشور فيسبوك
+              const fbRes = await axios.get(\`https://graph.facebook.com/v20.0/\${process.env.POST_ID}/comments?access_token=\${process.env.FB_ACCESS_TOKEN}\`);
+              const comments = fbRes.data.data;
+              
+              if (!comments || comments.length === 0) {
+                console.log('لا توجد تعليقات جديدة حالياً.');
+                return;
+              }
+
+              console.log(\`تم العثور على \${comments.length} تعليق. جاري إرسالها إلى Vercel...\`);
+
+              // 2. إرسال التعليقات إلى الـ API الخاص بك على Vercel
+              const response = await axios.post(process.env.VERCEL_AGENT_URL, { comments }, {
+                headers: { 'Authorization': \`Bearer \${process.env.AGENT_SECRET}\` }
+              });
+              
+              console.log('تمت معالجة التعليقات بنجاح بواسطة الوكيل:', response.data);
+            } catch (err) {
+              console.error('حدث خطأ أثناء التشغيل:', err.response ? err.response.data : err.message);
+              process.exit(1);
+            }
+          }
+          run();
+          "
