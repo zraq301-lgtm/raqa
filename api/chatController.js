@@ -1,87 +1,107 @@
-// api/chatController.js
-
 export default async function handler(req, res) {
-  // إعدادات CORS للسماح بالطلب من أي نطاق
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    // إعدادات CORS للسماح بالاتصال من تطبيقك
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+    if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // عند فتح الرابط من المتصفح مباشرة للاختبار
-  if (req.method === 'GET') {
-    return res.status(200).json({ 
-      status: 'online', 
-      message: 'Sondss AI Service is active. Send a POST request to interact with AI.' 
-    });
-  }
+    const { prompt } = req.body;
+    const groqKey = process.env.GROQ_API_KEY; 
+    const mxbKey = process.env.MXBAI_API_KEY;
+    const storeId = "66de0209-e17d-4e42-81d1-3851d5a0d826";
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
-
-  const { message, storeData } = req.body || {};
-
-  if (!message) {
-    return res.status(400).json({ error: 'الرسالة مطلوبة (message parameter missing)' });
-  }
-
-  const GROQ_API_KEY = process.env.GROQ_API_KEY;
-
-  if (!GROQ_API_KEY) {
-    return res.status(500).json({ error: 'GROQ_API_KEY is not configured on Vercel' });
-  }
-
-  const contextSummary = storeData ? `
-بيانات الحركة الحالية:
-- عدد المنتجات: ${storeData.productCount ?? 0}
-- قيمة المخزون: ${storeData.inventoryValue ?? 0}
-- النواقص: ${storeData.lowStock ?? 0}
-- المبيعات: ${storeData.totalRevenue ?? 0}
-- المشتريات: ${storeData.totalPurchases ?? 0}
-` : 'لا توجد بيانات ممررة حالياً.';
-
-  const systemPrompt = `
-أنت مساعد ذكاء اصطناعي خبير لإدارة المحلات والمخازن والفواتير.
-حلل البيانات وقدم إجابات عملية ومختصرة باللغة العربية.
-بيانات النظام:
-${contextSummary}
-`;
-
-  try {
-    const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
-        ],
-        temperature: 0.5,
-        max_tokens: 1024,
-      }),
-    });
-
-    if (!groqResponse.ok) {
-      const errData = await groqResponse.json().catch(() => ({}));
-      throw new Error(errData.error?.message || `Groq Status: ${groqResponse.status}`);
+    // --- [إضافة 1: ميزة الرسم المجانية] ---
+    const imageKeywords = ["ارسم", "تخيل", "صورة لـ", "صورة ل"];
+    if (imageKeywords.some(keyword => prompt?.startsWith(keyword))) {
+        const imageDescription = prompt.replace(/ارسم|تخيل|صورة لـ|صورة ل/g, "").trim();
+        const generatedImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(imageDescription)}?width=1024&height=1024&nologo=true`;
+        return res.status(200).json({ 
+            message: `تفضلي يا رفيقتي، هذه هي الصورة التي تخيلتها لكِ: \n\n ![image](${generatedImageUrl})` 
+        });
     }
 
-    const data = await groqResponse.json();
-    const reply = data.choices?.[0]?.message?.content || 'لم يتم استلام إجابة.';
+    try {
+        // --- [تعديل 2: فحص وجود رابط صورة للتحليل] ---
+        const imageRegex = /https?:\/\/\S+\.(jpg|jpeg|png|webp|gif)/i;
+        const foundImageUrl = prompt?.match(imageRegex);
 
-    return res.status(200).json({ reply });
+        // 1. البحث أولاً في مكتبة Mixedbread المتخصصة (كما في كودك الأصلي)
+        let libraryContext = "";
+        try {
+            const mxbRes = await fetch(`https://api.mixedbread.ai/v1/stores/${storeId}/query`, {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${mxbKey}`,
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({ 
+                    query: prompt,
+                    top_k: 3 
+                })
+            });
 
-  } catch (error) {
-    return res.status(500).json({
-      error: 'فشل معالجة الطلب',
-      details: error.message
-    });
-  }
+            if (mxbRes.ok) {
+                const mxbData = await mxbRes.json();
+                libraryContext = mxbData?.hits?.map(h => h.content).join("\n\n") || "";
+            }
+        } catch (err) {
+            console.error("Mixedbread Error: ", err.message);
+        }
+
+        // 2. إعداد الطلب لـ Groq
+        let groqModel = "llama-3.3-70b-versatile"; // النموذج الأصلي
+        let messages = [];
+
+        if (foundImageUrl) {
+            // إذا وجد رابط صورة، نستخدم نموذج الرؤية
+            groqModel = "llama-3.2-11b-vision-preview";
+            messages = [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: prompt },
+                        { type: "image_url", image_url: { url: foundImageUrl[0] } }
+                    ]
+                }
+            ];
+        } else {
+            // الاستمرار بالوضع الأصلي للنصوص
+            const systemPrompt = libraryContext 
+                ? `أنتِ رقة، مساعدة خبيرة. استخدمي المعلومات التالية من المكتبة للرد بدقة: ${libraryContext}`
+                : "أنتِ رقة، ذكاء اصطناعي لبق وذكي. أجيبي على الأسئلة بوضوح.";
+            
+            messages = [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: prompt }
+            ];
+        }
+
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${groqKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: groqModel,
+                messages: messages,
+                temperature: 0.6
+            })
+        });
+
+        const data = await groqRes.json();
+        
+        if (data.choices && data.choices[0]) {
+            res.status(200).json({ message: data.choices[0].message.content });
+        } else {
+            // لتجنب خطأ "فشل رد الذكاء الاصطناعي" عند وجود مشاكل في النموذج
+            console.error("Groq Response Error:", data);
+            throw new Error(data.error?.message || "فشل رد الذكاء الاصطناعي");
+        }
+
+    } catch (error) {
+        console.error("Final API Error:", error);
+        res.status(200).json({ message: "عذراً رقيقة، رقة تواجه ضغطاً في الاتصال حالياً. حاولي مرة أخرى." });
+    }
 }
